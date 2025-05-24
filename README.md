@@ -1,80 +1,94 @@
-K2 TypeScript Broker Template
-===
+# K2 JSSP TypeScript Broker for Twilio SMS
 
-This template demonstrates best-practices for developing a K2 Broker using TypeScript.
+Integrate Twilio SMS with your K2 low-code platform: send, retrieve, list, and delete SMS messages.
 
-<!-- TOC -->
-* [K2 TypeScript Broker Template](#k2-typescript-broker-template)
-  * [Features](#features)
-  * [Getting Started](#getting-started)
-  * [Running Unit Tests](#running-unit-tests)
-  * [Building your bundled JS](#building-your-bundled-js)
-  * [Creating a service type](#creating-a-service-type)
-  * [License](#license)
-  * [Migration from Ava to Vitest](#migration-from-ava-to-vitest)
-<!-- TOC -->
+---
 
 ## Features
 
-- Full object model intellisense for making development easier
-- Sample broker code that accesses jsonplaceholder.
-- Sample unit tests with mocks and code coverage.
-- Vite configuration for TypeScript.
+- **Send SMS:** Send SMS messages via Twilio.
+- **Retrieve Status:** Get status and details of sent messages.
+- **List Messages:** View and filter SMS messages.
+- **Delete Messages:** Remove messages from your Twilio account.
+- **Secure Authentication:** Uses Twilio Account SID and Auth Token.
+- **K2 JSSP Compatible:** Deploy as a JavaScript Service Provider in K2.
+
+---
+
+## Requirements
+
+- [Node.js](https://nodejs.org/) v22.5.1+
+- [Twilio Account](https://www.twilio.com/try-twilio)
+- K2 environment with JavaScript Service Provider support
+
+---
 
 ## Getting Started
 
-This template requires [Node.js](https://nodejs.org/) v22.5.1+ to run.
-
-Install the dependencies and devDependencies:
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
-
-Alternatively, use pnpm to reduce the size of the `node_modules` directory:
-
+or
 ```bash
-npm install -g pnpm # Only required once
 pnpm install
 ```
 
-See the documentation for [@k2oss/k2-broker-core](https://www.npmjs.com/package/@k2oss/k2-broker-core)
-for more information about how to use the broker SDK package.
-
-## Running Unit Tests
-
-To run the unit tests, run:
-
-```bash
-npm test
-pnpm test # Alternative
-```
-
-You will find the code coverage results in [coverage/index.html](./coverage/index.html).
-
-## Building your bundled JS
-
-When you're ready to build your broker, run the following command
+### 2. Build the Broker
 
 ```bash
 npm run build
-pnpm run build # Alternative
+```
+or
+```bash
+pnpm run build
 ```
 
-You will find the results in the [dist/index.js](./dist/index.js).
+The built JavaScript will be in `dist/index.js`.
 
-## Creating a service type
+---
 
-Once you have a bundled .js file, upload it to your repository (anonymously
-accessible) and register the service type using the system SmartObject located
-at System > Management > SmartObjects > SmartObjects > JavaScript Service
-Provider and run the Create From URL method.
+## Deployment
 
-## License
+### Option 1: Deploy by File
 
-MIT, found in the [LICENSE](./LICENSE) file.
+1. **Rename** the built file to `.jssp`  
+   Example:  
+   ```bash
+   mv dist/index.js dist/twilio-sms-broker.jssp
+   ```
 
-[www.k2.com](https://www.k2.com)
+2. **Upload in K2:**  
+   - Go to  
+     `System > Management > SmartObjects > SmartObjects > JavaScript Service Provider`
+   - Use **Create or Update from File** and select your `.jssp` file.
 
-## Migration from Ava to Vitest
-If you used a previous version of this template and want to migrate to Vitest, please review the [Migration.md](./Migration.md) guide.
+### Option 2: Deploy by URL
+
+1. **Host** the built file (`dist/index.js`) at a public URL.
+2. **Register in K2:**  
+   - Use **Create or Update from URL** and provide the file's direct link.
+
+---
+
+## Configuration
+
+When you create the service instance in K2, you’ll be prompted for:
+- **Twilio Account SID**
+- **Twilio Auth Token**
+
+These are used for authenticating all API calls.
+
+---
+
+## Usage
+
+After deploying, you can:
+- **Send SMS:** Use the “Send Message” method, providing `to`, `from`, and `body`.
+- **Get Message:** Retrieve status/details by Twilio SID.
+- **List Messages:** View and filter SMS messages.
+- **Delete Message:** Remove a message by SID.
+
+Phone numbers must be in E.164 format (e.g., `+1234567890`).
+
