@@ -1,0 +1,236 @@
+metadata = {
+  systemName: "com.yourcompany.twilio.sms",
+  displayName: "Twilio SMS Broker",
+  description: "Integrates with Twilio to send, fetch, list, and delete SMS messages.",
+  configuration: {
+    accountSid: {
+      displayName: "Twilio Account SID",
+      type: "string",
+      required: !0
+    },
+    authToken: {
+      displayName: "Twilio Auth Token",
+      required: !0,
+      type: "string"
+    }
+  }
+};
+ondescribe = async function({ configuration: t }) {
+  postSchema({
+    objects: {
+      message: {
+        displayName: "Message",
+        description: "Represents an SMS message in Twilio.",
+        properties: {
+          sid: { displayName: "Message SID", type: "string" },
+          to: { displayName: "To", type: "string" },
+          from: { displayName: "From", type: "string" },
+          body: { displayName: "Body", type: "string" },
+          status: { displayName: "Status", type: "string" },
+          dateSent: { displayName: "Date Sent", type: "string" },
+          errorCode: { displayName: "Error Code", type: "string" }
+        },
+        methods: {
+          send: {
+            displayName: "Send Message",
+            type: "create",
+            inputs: ["to", "from", "body"],
+            outputs: ["sid", "status", "dateSent", "errorCode"]
+          },
+          get: {
+            displayName: "Get Message",
+            type: "read",
+            inputs: ["sid"],
+            outputs: [
+              "sid",
+              "to",
+              "from",
+              "body",
+              "status",
+              "dateSent",
+              "errorCode"
+            ]
+          },
+          list: {
+            displayName: "List Messages",
+            type: "list",
+            parameters: {
+              to: { displayName: "To", type: "string" },
+              from: { displayName: "From", type: "string" },
+              dateSent: { displayName: "Date Sent", type: "string" }
+            },
+            outputs: [
+              "sid",
+              "to",
+              "from",
+              "body",
+              "status",
+              "dateSent",
+              "errorCode"
+            ]
+          },
+          delete: {
+            displayName: "Delete Message",
+            type: "delete",
+            inputs: ["sid"],
+            outputs: []
+          }
+        }
+      }
+    }
+  });
+};
+onexecute = async function({
+  objectName: t,
+  methodName: o,
+  parameters: r,
+  properties: n,
+  configuration: a,
+  schema: e
+}) {
+  switch (t) {
+    case "message":
+      await l(o, n, r, a);
+      break;
+    default:
+      throw new Error("The object '" + t + "' is not supported.");
+  }
+};
+async function l(t, o, r, n) {
+  switch (t) {
+    case "send":
+      await m(o, n);
+      break;
+    case "get":
+      await f(o, n);
+      break;
+    case "list":
+      await g(r, n);
+      break;
+    case "delete":
+      await S(o, n);
+      break;
+    default:
+      throw new Error("The method '" + t + "' is not supported.");
+  }
+}
+function p(t) {
+  return "https://api.twilio.com/2010-04-01/Accounts/" + encodeURIComponent(t);
+}
+function y(t, o, r) {
+  const n = new XMLHttpRequest();
+  n.open(t, o);
+  const a = r.accountSid, e = r.authToken, s = h(a + ":" + e);
+  return n.setRequestHeader("Authorization", "Basic " + s), n.setRequestHeader("Content-Type", "application/x-www-form-urlencoded"), n;
+}
+async function m(t, o) {
+  return new Promise((r, n) => {
+    const a = p(o.accountSid.toString()) + "/Messages.json", e = y("POST", a, o), s = [
+      "To=" + encodeURIComponent(t.to.toString()),
+      "From=" + encodeURIComponent(t.from.toString()),
+      "Body=" + encodeURIComponent(t.body.toString())
+    ].join("&");
+    e.onreadystatechange = function() {
+      if (e.readyState === 4)
+        try {
+          if (e.status < 200 || e.status >= 300)
+            throw new Error("Twilio send failed: " + e.status + " - " + e.responseText);
+          const i = JSON.parse(e.responseText);
+          postResult({
+            sid: i.sid,
+            status: i.status,
+            dateSent: i.date_sent || "",
+            errorCode: i.error_code ? String(i.error_code) : ""
+          }), r();
+        } catch (i) {
+          n(i);
+        }
+    }, e.send(s);
+  });
+}
+async function f(t, o) {
+  return new Promise((r, n) => {
+    if (!t.sid) throw new Error("sid is required.");
+    const a = p(o.accountSid.toString()) + "/Messages/" + encodeURIComponent(t.sid.toString()) + ".json", e = y("GET", a, o);
+    e.onreadystatechange = function() {
+      if (e.readyState === 4)
+        try {
+          if (e.status < 200 || e.status >= 300)
+            throw new Error("Twilio get failed: " + e.status + " - " + e.responseText);
+          const s = JSON.parse(e.responseText);
+          postResult({
+            sid: s.sid,
+            to: s.to,
+            from: s.from,
+            body: s.body,
+            status: s.status,
+            dateSent: s.date_sent || "",
+            errorCode: s.error_code ? String(s.error_code) : ""
+          }), r();
+        } catch (s) {
+          n(s);
+        }
+    }, e.send();
+  });
+}
+async function g(t, o) {
+  return new Promise((r, n) => {
+    let a = p(o.accountSid.toString()) + "/Messages.json";
+    const e = [];
+    t.to && e.push("To=" + encodeURIComponent(t.to.toString())), t.from && e.push("From=" + encodeURIComponent(t.from.toString())), t.dateSent && e.push("DateSent=" + encodeURIComponent(t.dateSent.toString())), e.length > 0 && (a += "?" + e.join("&"));
+    const s = y("GET", a, o);
+    s.onreadystatechange = function() {
+      if (s.readyState === 4)
+        try {
+          if (s.status < 200 || s.status >= 300)
+            throw new Error("Twilio list failed: " + s.status + " - " + s.responseText);
+          const i = JSON.parse(s.responseText);
+          if (!i.messages || !Array.isArray(i.messages))
+            throw new Error("Unexpected Twilio response: " + s.responseText);
+          for (const d of i.messages)
+            postResult({
+              sid: d.sid,
+              to: d.to,
+              from: d.from,
+              body: d.body,
+              status: d.status,
+              dateSent: d.date_sent || "",
+              errorCode: d.error_code ? String(d.error_code) : ""
+            });
+          r();
+        } catch (i) {
+          n(i);
+        }
+    }, s.send();
+  });
+}
+async function S(t, o) {
+  return new Promise((r, n) => {
+    if (!t.sid) throw new Error("sid is required.");
+    const a = p(o.accountSid.toString()) + "/Messages/" + encodeURIComponent(t.sid.toString()) + ".json", e = y("DELETE", a, o);
+    e.onreadystatechange = function() {
+      if (e.readyState === 4)
+        try {
+          if (e.status === 204)
+            r();
+          else {
+            if (e.status < 200 || e.status >= 300)
+              throw new Error("Twilio delete failed: " + e.status + " - " + e.responseText);
+            r();
+          }
+        } catch (s) {
+          n(s);
+        }
+    }, e.send();
+  });
+}
+function h(t) {
+  if (typeof Buffer < "u") return Buffer.from(t, "utf-8").toString("base64");
+  if (typeof btoa < "u") return btoa(t);
+  var o = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+  let r = "", n, a, e, s, i, d, c, u = 0;
+  for (; u < t.length; )
+    n = t.charCodeAt(u++), a = t.charCodeAt(u++), e = t.charCodeAt(u++), s = n >> 2, i = (n & 3) << 4 | a >> 4, d = (a & 15) << 2 | e >> 6, c = e & 63, isNaN(a) ? d = c = 64 : isNaN(e) && (c = 64), r += o.charAt(s) + o.charAt(i) + o.charAt(d) + o.charAt(c);
+  return r;
+}
+//# sourceMappingURL=index.js.map
